@@ -1,0 +1,11 @@
+services:
+  pg:
+    image: ankane/pgvector
+    network_mode: "host"
+    restart: always
+    env_file: .env
+    healthcheck:
+      test: pg_isready -U kerege -d kerege_db
+      interval: 10s
+      timeout: 3s
+      retries: 3

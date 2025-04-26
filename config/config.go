@@ -7,10 +7,16 @@ import (
 
 type Config struct {
 	OpenAIToken string
+	PGDSN       string
 }
 
 func NewConfig() (c Config, err error) {
 	c.OpenAIToken, err = getenv("OPENAI_TOKEN")
+	if err != nil {
+		return
+	}
+
+	c.PGDSN, err = getenv("PG_DSN")
 	if err != nil {
 		return
 	}
