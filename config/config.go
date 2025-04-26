@@ -6,11 +6,11 @@ import (
 )
 
 type Config struct {
-	openAIToken string
+	OpenAIToken string
 }
 
 func NewConfig() (c Config, err error) {
-	c.openAIToken, err = getenv("OPENAI_TOKEN")
+	c.OpenAIToken, err = getenv("OPENAI_TOKEN")
 	if err != nil {
 		return
 	}
