@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jackc/pgx"
+	"github.com/jackc/pgx/v5"
 )
 
 func InsertDocument(
@@ -15,10 +15,9 @@ func InsertDocument(
 	content string,
 ) error {
 	embedStr := vectorToPG(embedding)
-	_, err := conn.ExecEx(
+	_, err := conn.Exec(
 		ctx,
 		"INSERT INTO documents (content, embedding) VALUES ($1, $2)",
-		nil,
 		content, embedStr,
 	)
 	return err
@@ -32,10 +31,9 @@ func SearchDocuments(
 ) ([]string, error) {
 	embedStr := vectorToPG(embedding)
 
-	rows, err := conn.QueryEx(
+	rows, err := conn.Query(
 		ctx,
 		"SELECT content FROM documents ORDER BY embedding <#> $1 LIMIT $2",
-		nil,
 		embedStr, topK,
 	)
 	if err != nil {
