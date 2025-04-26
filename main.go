@@ -1,7 +1,17 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+
+	"oybek.io/kerege/config"
+)
 
 func main() {
-	fmt.Printf("hello, world!\n")
+	theConfig, err := config.NewConfig()
+	if err != nil {
+		log.Fatalf("Error create config: %v", err)
+	}
+
+	fmt.Printf("%#v\n", theConfig)
 }

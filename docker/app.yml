@@ -4,7 +4,7 @@ services:
       context: ../.
       dockerfile: ./Dockerfile
     network_mode: "host"
-#   env_file: .env
+    env_file: .env
     healthcheck:
       test: curl -f localhost:8080/health
       interval: 10s
