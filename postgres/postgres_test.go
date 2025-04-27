@@ -23,7 +23,7 @@ func TestMain(m *testing.M) {
                          id SERIAL PRIMARY KEY,
                          content TEXT,
                          embedding VECTOR(1536)
-										 )`)
+                     )`)
 	testdb = db
 
 	code := m.Run()

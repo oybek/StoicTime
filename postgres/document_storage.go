@@ -1,0 +1,22 @@
+package postgres
+
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5"
+	"oybek.io/kerege/model"
+)
+
+type DocumentStorage struct {
+	conn *pgx.Conn
+}
+
+func NewDocumentStorage(conn *pgx.Conn) *DocumentStorage {
+	return &DocumentStorage{
+		conn: conn,
+	}
+}
+
+func (ds *DocumentStorage) Store(ctx context.Context, document *model.Document) error {
+	return InsertDocument(ds.conn, ctx, document.Embedding, document.Content)
+}
