@@ -8,6 +8,7 @@ import (
 
 type DocumentStorage interface {
 	Store(context.Context, *model.Document) error
+	Search(context.Context, []float32) ([]string, error)
 }
 
 type EmbeddingCalculator interface {

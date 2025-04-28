@@ -3,7 +3,11 @@ package main
 import (
 	"context"
 	_ "embed"
+	"fmt"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/sashabaranov/go-openai"
@@ -38,7 +42,26 @@ func main() {
 	documentStorage := postgres.NewDocumentStorage(pgConn)
 
 	embeddingService := service.NewEmbeddingService(documentStorage, openAIWrapper)
+	if false {
+		embeddingService.GetAndStoreEmbeddings(ctx, "hello")
+	}
 
-	// launches
-	embeddingService.GetAndStoreEmbeddings(ctx, taxCode)
+	bot, err := service.NewBot(
+		theConfig.BotToken,
+		client,
+		documentStorage,
+		openAIWrapper,
+	)
+	if err != nil {
+		log.Fatalf("failed to create bot client: %v", err)
+	}
+
+	// launch
+	go bot.Start()
+
+	// listen for ctrl+c signal from terminal
+	ch := make(chan os.Signal, 1)
+	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
+	log.Println(fmt.Sprint(<-ch))
+	log.Println("Stopping the bot...")
 }

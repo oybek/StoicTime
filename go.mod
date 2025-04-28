@@ -3,6 +3,7 @@ module oybek.io/kerege
 go 1.24.2
 
 require (
+	github.com/PaulSonOfLars/gotgbot/v2 v2.0.0-rc.32
 	github.com/sashabaranov/go-openai v1.38.2
 	github.com/stretchr/testify v1.10.0
 )

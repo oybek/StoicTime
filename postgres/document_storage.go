@@ -20,3 +20,7 @@ func NewDocumentStorage(conn *pgx.Conn) *DocumentStorage {
 func (ds *DocumentStorage) Store(ctx context.Context, document *model.Document) error {
 	return InsertDocument(ds.conn, ctx, document.Embedding, document.Content)
 }
+
+func (ds *DocumentStorage) Search(ctx context.Context, embedding []float32) ([]string, error) {
+	return SearchDocuments(ds.conn, ctx, embedding, 1)
+}

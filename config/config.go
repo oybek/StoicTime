@@ -6,21 +6,21 @@ import (
 )
 
 type Config struct {
+	BotToken    string
 	OpenAIToken string
 	PGDSN       string
 }
 
 func NewConfig() (c Config, err error) {
-	c.OpenAIToken, err = getenv("OPENAI_TOKEN")
-	if err != nil {
+	if c.BotToken, err = getenv("BOT_TOKEN"); err != nil {
 		return
 	}
-
-	c.PGDSN, err = getenv("PG_DSN")
-	if err != nil {
+	if c.OpenAIToken, err = getenv("OPENAI_TOKEN"); err != nil {
 		return
 	}
-
+	if c.PGDSN, err = getenv("PG_DSN"); err != nil {
+		return
+	}
 	return c, nil
 }
 
