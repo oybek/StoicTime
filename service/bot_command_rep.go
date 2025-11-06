@@ -33,9 +33,9 @@ func (b *Bot) handleCommandRep(tg *gotgbot.Bot, tgctx *ext.Context) error {
 	for _, al := range actLogs {
 		if al.StartTime.Sub(last) > time.Minute {
 			s += formatRange(last, al.StartTime, "❓", DefaultTZ) + "\n"
-			s += formatRange(al.StartTime, al.EndTime, al.Name, DefaultTZ) + "\n"
-			last = al.EndTime
 		}
+		s += formatRange(al.StartTime, al.EndTime, al.Name, DefaultTZ) + "\n"
+		last = al.EndTime
 	}
 	if tomorrowMidnight.Sub(last) > time.Minute {
 		s += formatRange(last, tomorrowMidnight, "❓", DefaultTZ) + "\n"
