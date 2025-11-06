@@ -2,55 +2,98 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"strings"
+	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
-	"github.com/sashabaranov/go-openai"
+	"oybek.io/sigma/model"
+	"oybek.io/sigma/rdb"
+	"oybek.io/sigma/texts"
 )
 
-func (b *Bot) onMessage(_ *gotgbot.Bot, ctx *ext.Context) error {
-	chat := ctx.EffectiveChat
-	text := ctx.EffectiveMessage.Text
+func (b *Bot) onMessage(tg *gotgbot.Bot, tgCtx *ext.Context) error {
+	ctx := context.Background()
 
-	b.bot.SendChatAction(chat.Id, "typing", nil)
+	chat := tgCtx.EffectiveChat
+	text := tgCtx.EffectiveMessage.Text
 
-	aText, err := b.answerTheQuestion(context.Background(), text)
+	b.typing(chat)
+
+	actName, err := b.checkActExists(ctx, chat.Id, text)
+	if err != nil || actName == "" {
+		return err
+	}
+
+	err = b.finishLastActLog(ctx, chat.Id)
 	if err != nil {
 		return err
 	}
 
-	_, err = b.bot.SendMessage(ctx.EffectiveChat.Id, aText, nil)
-	return err
+	return b.createActLog(ctx, chat.Id, actName)
 }
 
-func (b *Bot) answerTheQuestion(ctx context.Context, qText string) (string, error) {
-	qEmbedding, err := b.embeddingCalculator.GetEmbedding(ctx, qText)
-	if err != nil {
-		return "", err
-	}
-
-	texts, err := b.documentStorage.Search(ctx, qEmbedding)
-	if err != nil {
-		return "", err
-	}
-
-	contextText := strings.Join(texts, "\n---\n")
-	prompt := fmt.Sprintf("Контекст:\n%s\n\nВопрос: %s\n", contextText, qText)
-
-	// Получаем ответ от GPT
-	resp, err := b.client.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model: openai.GPT4,
-		Messages: []openai.ChatCompletionMessage{
-			{Role: "system", Content: "Ты помощник, отвечающий по контексту. Все в рамках страны Кыргызстан. " +
-				"Если в контексте нет нужной информации - советуй обратиться в юридическую фирму 'Кереге'"},
-			{Role: "user", Content: prompt},
-		},
+func (b *Bot) checkActExists(ctx context.Context, chatID int64, text string) (string, error) {
+	actName := strings.TrimSpace(text)
+	acts, err := b.actStorage.FindAct(ctx, rdb.FindActArg{
+		UserID: chatID,
+		Name:   actName,
 	})
 	if err != nil {
 		return "", err
 	}
+	if len(acts) == 0 {
+		_, err := b.tg.SendMessage(chatID, texts.ActMissing, nil)
+		return "", err
+	}
+	return actName, nil
+}
 
-	return resp.Choices[0].Message.Content, nil
+func (b *Bot) finishLastActLog(ctx context.Context, chatID int64) error {
+	actLog, err := b.actLogStorage.FindActLog(ctx, rdb.FindActLogArg{UserID: chatID, Active: true})
+	if err != nil || len(actLog) == 0 {
+		return err
+	}
+
+	actLog[0].EndTime = time.Now().UTC()
+	err = b.actLogStorage.UpdateActLog(ctx, actLog[0])
+	if err != nil {
+		return err
+	}
+
+	b.tg.EditMessageText(actLog[0].Text(), &gotgbot.EditMessageTextOpts{
+		ChatId:    chatID,
+		MessageId: actLog[0].MessageID,
+	})
+	return nil
+}
+
+func (b *Bot) createActLog(ctx context.Context, chatID int64, actName string) error {
+	actLog := model.ActLog{
+		UserID:    chatID,
+		Name:      actName,
+		StartTime: time.Now().UTC(),
+	}
+	message, err := b.tg.SendMessage(chatID, actLog.Text(), &gotgbot.SendMessageOpts{
+		ReplyMarkup: gotgbot.InlineKeyboardMarkup{
+			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{
+				gotgbot.InlineKeyboardButton{
+					Text:         "Завершить",
+					CallbackData: "/finish",
+				},
+			}},
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	actLog.MessageID = message.MessageId
+	err = b.actLogStorage.CreateActLog(ctx, actLog)
+	if err != nil {
+		b.tg.DeleteMessage(chatID, message.MessageId, nil)
+		return err
+	}
+
+	return nil
 }

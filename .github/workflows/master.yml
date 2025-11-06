@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.24.2'
+          go-version: '1.25.3'
       - name: Test
         run: |
           go test ./...
@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.24.2'
+          go-version: '1.25.3'
       - name: Build
         run: |
           CGO_ENABLED=0 GOOS=linux go build -o ${{ github.sha }}
@@ -39,7 +39,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: ${{ github.sha }}
-          target: /home/bender/kerege/
+          target: /home/bender/sigma/
       - name: Update app
         uses: appleboy/ssh-action@master
         with:
@@ -47,6 +47,6 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            chmod +x /home/bender/kerege/${{ github.sha }}
-            ln -sf /home/bender/kerege/${{ github.sha }} /home/bender/kerege/app
-            sudo systemctl restart kerege
+            chmod +x /home/bender/sigma/${{ github.sha }}
+            ln -sf /home/bender/sigma/${{ github.sha }} /home/bender/sigma/app
+            sudo systemctl restart sigma

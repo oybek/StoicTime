@@ -7,22 +7,20 @@ import (
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers"
+	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/callbackquery"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext/handlers/filters/message"
-	"github.com/sashabaranov/go-openai"
 )
 
 type Bot struct {
-	bot                 *gotgbot.Bot
-	client              *openai.Client
-	documentStorage     DocumentStorage
-	embeddingCalculator EmbeddingCalculator
+	tg            *gotgbot.Bot
+	actStorage    ActStorage
+	actLogStorage ActLogStorage
 }
 
 func NewBot(
 	botToken string,
-	client *openai.Client,
-	documentStorage DocumentStorage,
-	embeddingCalculator EmbeddingCalculator,
+	actStorage ActStorage,
+	actLogStorage ActLogStorage,
 ) (*Bot, error) {
 	bot, err := gotgbot.NewBot(botToken, nil)
 	if err != nil {
@@ -30,10 +28,9 @@ func NewBot(
 	}
 
 	return &Bot{
-		bot:                 bot,
-		client:              client,
-		documentStorage:     documentStorage,
-		embeddingCalculator: embeddingCalculator,
+		tg:            bot,
+		actStorage:    actStorage,
+		actLogStorage: actLogStorage,
 	}, nil
 }
 
@@ -50,16 +47,21 @@ func (b *Bot) Start() error {
 	updater := ext.NewUpdater(dispatcher, nil)
 
 	// /start command to introduce the bot
-	dispatcher.AddHandler(handlers.NewCommand("start", start))
+	dispatcher.AddHandler(handlers.NewCommand("start", b.handleCommandHelp))
+	dispatcher.AddHandler(handlers.NewCommand("help", b.handleCommandHelp))
+	dispatcher.AddHandler(handlers.NewCommand("add", b.handleCommandAdd))
+	dispatcher.AddHandler(handlers.NewCommand("del", b.handleCommandDel))
+	dispatcher.AddHandler(handlers.NewCommand("all", b.handleCommandAll))
 	dispatcher.AddHandler(handlers.NewMessage(message.Text, b.onMessage))
+	dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal("/finish"), b.handleCallbackFinish))
 
 	// Start receiving updates.
-	err := updater.StartPolling(b.bot, &ext.PollingOpts{
+	err := updater.StartPolling(b.tg, &ext.PollingOpts{
 		DropPendingUpdates: true,
 		GetUpdatesOpts: &gotgbot.GetUpdatesOpts{
 			Timeout: 15,
 			RequestOpts: &gotgbot.RequestOpts{
-				Timeout: time.Second * 10,
+				Timeout: time.Second * 20,
 			},
 		},
 	})
@@ -67,7 +69,7 @@ func (b *Bot) Start() error {
 		return err
 	}
 
-	log.Printf("%s has been started...\n", b.bot.User.Username)
+	log.Printf("%s has been started...\n", b.tg.User.Username)
 
 	// Idle, to keep updates coming in, and avoid bot stopping.
 	updater.Idle()

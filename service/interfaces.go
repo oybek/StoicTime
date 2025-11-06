@@ -3,14 +3,18 @@ package service
 import (
 	"context"
 
-	"oybek.io/kerege/model"
+	"oybek.io/sigma/model"
+	"oybek.io/sigma/rdb"
 )
 
-type DocumentStorage interface {
-	Store(context.Context, *model.Document) error
-	Search(context.Context, []float32) ([]string, error)
+type ActStorage interface {
+	CreateAct(ctx context.Context, act model.Act) error
+	FindAct(ctx context.Context, arg rdb.FindActArg) ([]model.Act, error)
+	DeleteAct(ctx context.Context, arg rdb.DeleteActArg) error
 }
 
-type EmbeddingCalculator interface {
-	GetEmbedding(context.Context, string) ([]float32, error)
+type ActLogStorage interface {
+	CreateActLog(ctx context.Context, actLog model.ActLog) error
+	FindActLog(ctx context.Context, arg rdb.FindActLogArg) ([]model.ActLog, error)
+	UpdateActLog(ctx context.Context, actLog model.ActLog) error
 }

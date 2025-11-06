@@ -5,7 +5,7 @@ services:
     restart: always
     env_file: .env
     healthcheck:
-      test: pg_isready -U kerege -d kerege_db
+      test: pg_isready -U sigma -d sigma_db
       interval: 10s
       timeout: 3s
       retries: 3
