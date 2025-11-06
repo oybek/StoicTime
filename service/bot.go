@@ -13,12 +13,14 @@ import (
 
 type Bot struct {
 	tg            *gotgbot.Bot
+	clock         *Clock
 	actStorage    ActStorage
 	actLogStorage ActLogStorage
 }
 
 func NewBot(
 	botToken string,
+	clock *Clock,
 	actStorage ActStorage,
 	actLogStorage ActLogStorage,
 ) (*Bot, error) {
@@ -29,6 +31,7 @@ func NewBot(
 
 	return &Bot{
 		tg:            bot,
+		clock:         clock,
 		actStorage:    actStorage,
 		actLogStorage: actLogStorage,
 	}, nil
@@ -52,6 +55,7 @@ func (b *Bot) Start() error {
 	dispatcher.AddHandler(handlers.NewCommand("add", b.handleCommandAdd))
 	dispatcher.AddHandler(handlers.NewCommand("del", b.handleCommandDel))
 	dispatcher.AddHandler(handlers.NewCommand("all", b.handleCommandAll))
+	dispatcher.AddHandler(handlers.NewCommand("rep", b.handleCommandRep))
 	dispatcher.AddHandler(handlers.NewMessage(message.Text, b.onMessage))
 	dispatcher.AddHandler(handlers.NewCallback(callbackquery.Equal("/finish"), b.handleCallbackFinish))
 

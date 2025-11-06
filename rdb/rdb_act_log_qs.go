@@ -11,6 +11,8 @@ type FindActLogArg struct {
 	UserID    int64
 	MessageID int64
 	Active    bool
+	FromTime  time.Time
+	ToTime    time.Time
 }
 
 func (r *Rdb) CreateActLog(ctx context.Context, actLog model.ActLog) error {
@@ -36,6 +38,9 @@ func (r *Rdb) FindActLog(ctx context.Context, arg FindActLogArg) ([]model.ActLog
 	} else if arg.Active == true {
 		query += ` AND end_time = $2`
 		args = append(args, time.Time{})
+	} else if arg.FromTime != (time.Time{}) && arg.ToTime != (time.Time{}) {
+		query += ` AND start_time <= $2 AND end_time >= $3 ORDER BY start_time`
+		args = append(args, arg.ToTime, arg.FromTime)
 	}
 
 	rows, err := r.c.Query(ctx, query, args...)

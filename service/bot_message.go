@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"strings"
-	"time"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -55,13 +54,13 @@ func (b *Bot) finishLastActLog(ctx context.Context, chatID int64) error {
 		return err
 	}
 
-	actLog[0].EndTime = time.Now().UTC()
+	actLog[0].EndTime = b.clock.Now()
 	err = b.actLogStorage.UpdateActLog(ctx, actLog[0])
 	if err != nil {
 		return err
 	}
 
-	b.tg.EditMessageText(actLog[0].Text(), &gotgbot.EditMessageTextOpts{
+	b.tg.EditMessageText(actLog[0].Text(DefaultTZ), &gotgbot.EditMessageTextOpts{
 		ChatId:    chatID,
 		MessageId: actLog[0].MessageID,
 	})
@@ -72,9 +71,9 @@ func (b *Bot) createActLog(ctx context.Context, chatID int64, actName string) er
 	actLog := model.ActLog{
 		UserID:    chatID,
 		Name:      actName,
-		StartTime: time.Now().UTC(),
+		StartTime: b.clock.Now(),
 	}
-	message, err := b.tg.SendMessage(chatID, actLog.Text(), &gotgbot.SendMessageOpts{
+	message, err := b.tg.SendMessage(chatID, actLog.Text(DefaultTZ), &gotgbot.SendMessageOpts{
 		ReplyMarkup: gotgbot.InlineKeyboardMarkup{
 			InlineKeyboard: [][]gotgbot.InlineKeyboardButton{{
 				gotgbot.InlineKeyboardButton{

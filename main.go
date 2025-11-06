@@ -31,6 +31,7 @@ func main() {
 
 	bot, err := service.NewBot(
 		theConfig.BotToken,
+		&service.Clock{},
 		theRdb,
 		theRdb,
 	)
