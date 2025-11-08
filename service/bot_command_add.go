@@ -9,6 +9,10 @@ import (
 	"oybek.io/sigma/model"
 )
 
+func refineActName(name string) string {
+	return strings.ToLower(strings.TrimSpace(name))
+}
+
 func (b *Bot) typing(chat *gotgbot.Chat) {
 	b.tg.SendChatAction(chat.Id, "typing", nil)
 }
@@ -21,7 +25,7 @@ func (b *Bot) handleCommandAdd(tg *gotgbot.Bot, tgctx *ext.Context) error {
 
 	b.typing(chat)
 
-	actName := strings.TrimSpace(strings.TrimPrefix(text, "/add"))
+	actName := refineActName(strings.TrimPrefix(text, "/add"))
 	if actName == "" {
 		return b.handleCommandHelp(tg, tgctx)
 	}

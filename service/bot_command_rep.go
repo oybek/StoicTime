@@ -12,33 +12,35 @@ import (
 	"oybek.io/sigma/rdb"
 )
 
+const epsilon = 10 * time.Minute
+
 func (b *Bot) handleCommandRep(tg *gotgbot.Bot, tgctx *ext.Context) error {
 	ctx := context.Background()
 
-	todayMidnight := b.clock.TodayMidnight(DefaultTZ)
-	tomorrowMidnight := b.clock.TomorrowMidnight(DefaultTZ)
-	actLogs, err := b.actLogStorage.FindActLog(ctx, rdb.FindActLogArg{
-		UserID:   tgctx.EffectiveChat.Id,
-		FromTime: todayMidnight,
-		ToTime:   tomorrowMidnight,
-	})
+	A, B := b.clock.TodayStartEnd(DefaultTZ)
+	actLogs, err := b.actLogStorage.FindActLog(
+		ctx, rdb.FindActLogArg{
+			UserID:   tgctx.EffectiveChat.Id,
+			FromTime: A,
+			ToTime:   B,
+		})
 	if err != nil {
 		return err
 	}
 
-	actLogs = trim(actLogs, todayMidnight, tomorrowMidnight)
+	actLogs = trim(actLogs, A, B)
 
-	s := todayMidnight.In(DefaultTZ).Format("02/01/2006") + "\n\n"
-	last := todayMidnight
+	s := A.In(DefaultTZ).Format("02/01/2006") + "\n\n"
+	last := A
 	for _, al := range actLogs {
-		if al.StartTime.Sub(last) > time.Minute {
+		if al.StartTime.Sub(last) > epsilon {
 			s += formatRange(last, al.StartTime, "❓", DefaultTZ) + "\n"
 		}
 		s += formatRange(al.StartTime, al.EndTime, al.Name, DefaultTZ) + "\n"
 		last = al.EndTime
 	}
-	if tomorrowMidnight.Sub(last) > time.Minute {
-		s += formatRange(last, tomorrowMidnight, "❓", DefaultTZ) + "\n"
+	if B.Sub(last) > epsilon {
+		s += formatRange(last, B, "❓", DefaultTZ) + "\n"
 	}
 
 	_, err = tg.SendMessage(tgctx.EffectiveChat.Id, s+"\n"+summary(actLogs), &gotgbot.SendMessageOpts{

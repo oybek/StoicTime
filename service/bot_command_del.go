@@ -17,7 +17,7 @@ func (b *Bot) handleCommandDel(tg *gotgbot.Bot, tgctx *ext.Context) error {
 
 	b.typing(chat)
 
-	actName := strings.TrimSpace(strings.TrimPrefix(text, "/del"))
+	actName := refineActName(strings.TrimPrefix(text, "/del"))
 	if actName == "" {
 		return b.handleCommandHelp(tg, tgctx)
 	}

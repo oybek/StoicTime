@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"strings"
 
 	"github.com/PaulSonOfLars/gotgbot/v2"
 	"github.com/PaulSonOfLars/gotgbot/v2/ext"
@@ -33,7 +32,7 @@ func (b *Bot) onMessage(tg *gotgbot.Bot, tgCtx *ext.Context) error {
 }
 
 func (b *Bot) checkActExists(ctx context.Context, chatID int64, text string) (string, error) {
-	actName := strings.TrimSpace(text)
+	actName := refineActName(text)
 	acts, err := b.actStorage.FindAct(ctx, rdb.FindActArg{
 		UserID: chatID,
 		Name:   actName,
