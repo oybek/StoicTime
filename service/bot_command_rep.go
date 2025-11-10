@@ -13,6 +13,7 @@ import (
 )
 
 const epsilon = 10 * time.Minute
+const emojiQuestionMark = "❓"
 
 func (b *Bot) handleCommandRep(tg *gotgbot.Bot, tgctx *ext.Context) error {
 	ctx := context.Background()
@@ -34,13 +35,13 @@ func (b *Bot) handleCommandRep(tg *gotgbot.Bot, tgctx *ext.Context) error {
 	last := A
 	for _, al := range actLogs {
 		if al.StartTime.Sub(last) > epsilon {
-			s += formatRange(last, al.StartTime, "❓", DefaultTZ) + "\n"
+			s += formatRange(last, al.StartTime, emojiQuestionMark, DefaultTZ) + "\n"
 		}
 		s += formatRange(al.StartTime, al.EndTime, al.Name, DefaultTZ) + "\n"
 		last = al.EndTime
 	}
 	if B.Sub(last) > epsilon {
-		s += formatRange(last, B, "❓", DefaultTZ) + "\n"
+		s += formatRange(last, B, emojiQuestionMark, DefaultTZ) + "\n"
 	}
 
 	_, err = tg.SendMessage(tgctx.EffectiveChat.Id, s+"\n"+summary(actLogs), &gotgbot.SendMessageOpts{
@@ -52,9 +53,11 @@ func (b *Bot) handleCommandRep(tg *gotgbot.Bot, tgctx *ext.Context) error {
 func summary(logs []model.ActLog) string {
 	totalDurations := make(map[string]time.Duration)
 
+	sumOfDurations := 0 * time.Second
 	for _, log := range logs {
 		duration := log.EndTime.Sub(log.StartTime)
 		totalDurations[log.Name] += duration
+		sumOfDurations += duration
 	}
 
 	type kv struct {
@@ -64,6 +67,11 @@ func summary(logs []model.ActLog) string {
 	var sorted []kv
 	for name, dur := range totalDurations {
 		sorted = append(sorted, kv{name, dur})
+	}
+
+	UnknownDuration := (24 * time.Hour) - sumOfDurations
+	if UnknownDuration > 10*time.Minute {
+		sorted = append(sorted, kv{emojiQuestionMark, UnknownDuration})
 	}
 
 	sort.Slice(sorted, func(i, j int) bool {
